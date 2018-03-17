@@ -1,0 +1,114 @@
+Texture2D _map : register(t0);
+SamplerState _samp;
+
+cbuffer DS_View : register(b0)
+{
+	matrix _world;
+	matrix _view;
+	matrix _projection;
+};
+
+cbuffer PS_Sun : register(b0)
+{
+	float3 _directional;
+	float _sunPadding;
+}
+
+/////////////////////////////////////////////////////////////////////////
+
+struct VertexIn
+{
+	float3 PosL    : POSITION0;
+};
+
+struct VertexOut
+{
+	float3 PosL    : POSITION;
+};
+
+VertexOut VS(VertexIn vin)
+{
+	VertexOut vout;
+
+	vout.PosL = vin.PosL;
+
+	return vout;
+}
+
+struct PatchTess
+{
+	float EdgeTess[4]   : SV_TessFactor;
+	float InsideTess[2] : SV_InsideTessFactor;
+};
+
+PatchTess ConstantHS(InputPatch<VertexOut, 4> patch, uint patchID : SV_PrimitiveID)
+{
+	PatchTess pt;
+
+	pt.EdgeTess[0] = 3.0f;
+	pt.EdgeTess[1] = 3.0f;
+	pt.EdgeTess[2] = 3.0f;
+	pt.EdgeTess[3] = 3.0f;
+
+	pt.InsideTess[0] = 3.0f;
+	pt.InsideTess[1] = 3.0f;
+
+	return pt;
+}
+
+struct HullOut
+{
+	float3 PosL : POSITION;
+};
+
+[domain("quad")]
+[partitioning("integer")]
+[outputtopology("triangle_cw")]
+[outputcontrolpoints(4)]
+[patchconstantfunc("ConstantHS")]
+[maxtessfactor(64.0f)]
+HullOut HS(InputPatch<VertexOut, 4> p,
+	uint i : SV_OutputControlPointID,
+	uint patchId : SV_PrimitiveID)
+{
+	HullOut hout;
+
+	hout.PosL = p[i].PosL;
+
+	return hout;
+}
+
+struct DomainOut
+{
+	float4 PosH : SV_POSITION;
+};
+
+// The domain shader is called for every vertex created by the tessellator.  
+// It is like the vertex shader after tessellation.
+[domain("quad")]
+DomainOut DS(PatchTess patchTess,
+	float2 uv : SV_DomainLocation,
+	const OutputPatch<HullOut, 4> quad)
+{
+	DomainOut dout;
+
+	// Bilinear interpolation.
+	float3 v1 = lerp(quad[0].PosL, quad[1].PosL, uv.x);
+	float3 v2 = lerp(quad[2].PosL, quad[3].PosL, uv.x);
+	float3 p = lerp(v1, v2, uv.y);
+
+	// Displacement mapping
+	/*p.y = _map[0].SampleLevel(_samp, input.uv, 0).r;*/
+	p.y = sin(uv.x);
+
+	dout.PosH = mul(float4(p, 1.0f), _world);
+	dout.PosH = mul(dout.PosH, _view);
+	dout.PosH = mul(dout.PosH, _projection);
+
+	return dout;
+}
+
+float4 PS(DomainOut pin) : SV_Target
+{
+	return float4(1.0f, 1.0f, 1.0f, 1.0f);
+}
