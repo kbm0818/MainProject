@@ -1,18 +1,49 @@
 #include "stdafx.h"
 #include "Shader.h"
 
-void Shader::Render()
+void Shader::Render(ShaderType type)
 {
-	D3D::GetDC()->IASetInputLayout(inputLayout);
-	D3D::GetDC()->VSSetShader(vertexShader, NULL, 0);
-	D3D::GetDC()->PSSetShader(pixelShader, NULL, 0);
+	switch (type)
+	{
+	case ShaderType::VP:
+		D3D::GetDC()->IASetInputLayout(inputLayout);
+		D3D::GetDC()->VSSetShader(vertexShader, NULL, 0);
+		D3D::GetDC()->HSSetShader(nullptr, NULL, 0);
+		D3D::GetDC()->DSSetShader(nullptr, NULL, 0);
+		D3D::GetDC()->PSSetShader(pixelShader, NULL, 0);
+		break;
+
+	case ShaderType::VHDP:
+		D3D::GetDC()->IASetInputLayout(inputLayout);
+		D3D::GetDC()->VSSetShader(vertexShader, NULL, 0);
+		D3D::GetDC()->HSSetShader(hullShader, NULL, 0);
+		D3D::GetDC()->DSSetShader(domainShader, NULL, 0);
+		D3D::GetDC()->PSSetShader(pixelShader, NULL, 0);
+		break;
+	}
 }
 
-Shader::Shader(wstring shaderFile)
+Shader::Shader(wstring shaderFile, ShaderType type)
 	: shaderFile(shaderFile)
+	, pixelBlob(nullptr), vertexBlob(nullptr)
+	, pixelShader(nullptr), vertexShader(nullptr)
+	, hullBlob(nullptr), domainBlob(nullptr)
+	, hullShader(nullptr), domainShader(nullptr)
 {
-	CreateVertexShader();
-	CreatePixelShader();
+	switch (type)
+	{
+	case ShaderType::VP:
+		CreateVertexShader();
+		CreatePixelShader();
+		break;
+	case ShaderType::VHDP:
+		CreateVertexShader();
+		CreateHullShader();
+		CreateDomainShader();
+		CreatePixelShader();
+		break;
+	}
+
 	CreateInputLayout();
 }
 
@@ -21,6 +52,13 @@ Shader::~Shader()
 	SAFE_RELEASE(reflection);
 
 	SAFE_RELEASE(inputLayout);
+
+	SAFE_RELEASE(domainBlob);
+	SAFE_RELEASE(domainShader);
+
+	SAFE_RELEASE(hullBlob);
+	SAFE_RELEASE(hullShader);
+
 	SAFE_RELEASE(vertexBlob);
 	SAFE_RELEASE(vertexShader);
 
@@ -70,6 +108,48 @@ void Shader::CreatePixelShader()
 	assert(SUCCEEDED(hr));
 }
 
+void Shader::CreateHullShader()
+{
+	ID3D10Blob* error;
+	HRESULT hr = D3DX10CompileFromFile
+	(
+		shaderFile.c_str(), NULL, NULL, "HS", "hs_5_0"
+		, D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL
+		, &hullBlob, &error, NULL
+	);
+	CheckShaderError(hr, error);
+
+	hr = D3D::GetDevice()->CreateHullShader
+	(
+		hullBlob->GetBufferPointer()
+		, hullBlob->GetBufferSize()
+		, NULL
+		, &hullShader
+	);
+	assert(SUCCEEDED(hr));
+}
+
+void Shader::CreateDomainShader()
+{
+	ID3D10Blob* error;
+	HRESULT hr = D3DX10CompileFromFile
+	(
+		shaderFile.c_str(), NULL, NULL, "DS", "ds_5_0"
+		, D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL
+		, &domainBlob, &error, NULL
+	);
+	CheckShaderError(hr, error);
+
+	hr = D3D::GetDevice()->CreateDomainShader
+	(
+		domainBlob->GetBufferPointer()
+		, domainBlob->GetBufferSize()
+		, NULL
+		, &domainShader
+	);
+	assert(SUCCEEDED(hr));
+}
+
 void Shader::CheckShaderError(HRESULT hr, ID3DBlob * error)
 {
 	if (FAILED(hr))
@@ -114,38 +194,38 @@ void Shader::CreateInputLayout()
 
 		if (paramDesc.Mask == 1)
 		{
-			if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) 
+			if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
 				elementDesc.Format = DXGI_FORMAT_R32_UINT;
-			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) 
+			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
 				elementDesc.Format = DXGI_FORMAT_R32_SINT;
-			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) 
+			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
 				elementDesc.Format = DXGI_FORMAT_R32_FLOAT;
 		}
 		else if (paramDesc.Mask <= 3)
 		{
-			if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) 
+			if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
 				elementDesc.Format = DXGI_FORMAT_R32G32_UINT;
-			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) 
+			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
 				elementDesc.Format = DXGI_FORMAT_R32G32_SINT;
-			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) 
+			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
 				elementDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
 		}
 		else if (paramDesc.Mask <= 7)
 		{
-			if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) 
+			if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
 				elementDesc.Format = DXGI_FORMAT_R32G32B32_UINT;
-			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) 
+			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
 				elementDesc.Format = DXGI_FORMAT_R32G32B32_SINT;
-			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) 
+			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
 				elementDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
 		}
 		else if (paramDesc.Mask <= 15)
 		{
-			if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) 
+			if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32)
 				elementDesc.Format = DXGI_FORMAT_R32G32B32A32_UINT;
-			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) 
+			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32)
 				elementDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
-			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) 
+			else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32)
 				elementDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		}
 

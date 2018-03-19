@@ -1,3 +1,5 @@
+#include "Constants.hlsl"
+
 Texture2D _map[5] : register(t0);
 SamplerState samp;
 

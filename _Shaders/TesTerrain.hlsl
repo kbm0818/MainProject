@@ -1,33 +1,7 @@
+#include "Constants.hlsl"
+
 Texture2D _map[6] : register(t0);
 SamplerState _samp;
-
-cbuffer DS_View : register(b0)
-{
-	matrix _world;
-	matrix _view;
-	matrix _projection;
-
-	float3 _cameraPosition;
-	float cameraPadding;
-};
-
-cbuffer HS_View : register(b0)
-{
-	matrix _hworld;
-	matrix _hview;
-	matrix _hprojection;
-
-	float3 _hcameraPosition;
-	float hcameraPadding;
-};
-
-cbuffer PS_Sun : register(b0)
-{
-	float3 _directional;
-	float _sunPadding;
-}
-
-/////////////////////////////////////////////////////////////////////////
 
 struct VertexIn
 {
@@ -56,6 +30,17 @@ struct PatchTess
 	float InsideTess[2] : SV_InsideTessFactor;
 };
 
+cbuffer HS_World : register(b1)
+{
+	matrix _worldHS;
+}
+
+cbuffer HS_CameraPosition : register(b2)
+{
+	float3 _cameraPositionHS;
+	float _cameraPosition_Padding;
+}
+
 PatchTess ConstantHS(InputPatch<VertexOut, 4> patch, uint patchID : SV_PrimitiveID)
 {
 	PatchTess pt;
@@ -63,10 +48,10 @@ PatchTess ConstantHS(InputPatch<VertexOut, 4> patch, uint patchID : SV_Primitive
 	const float d0 = 50.0f;
 	const float d1 = 300.0f;
 
-	pt.EdgeTess[0] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[0].PosL + patch[2].PosL), 1.0f), _hworld).xyz, _hcameraPosition)) / (d1 - d0)), 5);
-	pt.EdgeTess[1] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[0].PosL + patch[1].PosL), 1.0f), _hworld).xyz, _hcameraPosition)) / (d1 - d0)), 5);
-	pt.EdgeTess[2] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[1].PosL + patch[3].PosL), 1.0f), _hworld).xyz, _hcameraPosition)) / (d1 - d0)), 5);
-	pt.EdgeTess[3] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[2].PosL + patch[3].PosL), 1.0f), _hworld).xyz, _hcameraPosition)) / (d1 - d0)), 5);
+	pt.EdgeTess[0] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[0].PosL + patch[2].PosL), 1.0f), _worldHS).xyz, _cameraPositionHS)) / (d1 - d0)), 5);
+	pt.EdgeTess[1] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[0].PosL + patch[1].PosL), 1.0f), _worldHS).xyz, _cameraPositionHS)) / (d1 - d0)), 5);
+	pt.EdgeTess[2] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[1].PosL + patch[3].PosL), 1.0f), _worldHS).xyz, _cameraPositionHS)) / (d1 - d0)), 5);
+	pt.EdgeTess[3] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[2].PosL + patch[3].PosL), 1.0f), _worldHS).xyz, _cameraPositionHS)) / (d1 - d0)), 5);
 
 	float tess = 0.25f * (pt.EdgeTess[0] + pt.EdgeTess[1] + pt.EdgeTess[2] + pt.EdgeTess[3]);
 
@@ -106,6 +91,17 @@ struct DomainOut
 	float2 uv : TEXCOORD0;
 };
 
+cbuffer DS_ViewProjection : register(b0)
+{
+	matrix _viewDS;
+	matrix _projectionDS;
+}
+
+cbuffer DS_World : register(b1)
+{
+	matrix _worldDS;
+}
+
 // The domain shader is called for every vertex created by the tessellator.  
 // It is like the vertex shader after tessellation.
 [domain("quad")]
@@ -128,15 +124,16 @@ DomainOut DS(PatchTess patchTess,
 
 	dout.uv = t;
 
-	dout.PosH = mul(float4(p, 1.0f), _world);
-	dout.PosH = mul(dout.PosH, _view);
-	dout.PosH = mul(dout.PosH, _projection);
+	dout.PosH = mul(float4(p, 1.0f), _worldDS);
+	dout.PosH = mul(dout.PosH, _viewDS);
+	dout.PosH = mul(dout.PosH, _projectionDS);
 
 	return dout;
 }
 
 float4 PS(DomainOut pin) : SV_Target
 {
-	return _map[0].SampleLevel(_samp, pin.uv, 0);
+	//return _map[0].SampleLevel(_samp, pin.uv, 0);
 	//return float4(_cameraPosition,1.0f);
+	return float4(1.0f,0.0f,0.0f,1.0f);
 }

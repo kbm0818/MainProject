@@ -17,5 +17,5 @@ public:
 
 private:
 	class Sky* sky;
-	class Plane* plane;
+	class Terrain* terrain;
 };

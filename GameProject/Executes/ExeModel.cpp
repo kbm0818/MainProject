@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "ExeModel.h"
 #include "../Environments/Sky.h"
-#include "../Meshes/Plane.h"
+#include "../Environments/Terrain.h"
 
 ExeModel::ExeModel(ExecuteValues* values)
 	: Execute(values)
@@ -10,19 +10,19 @@ ExeModel::ExeModel(ExecuteValues* values)
 	D3D::GetDesc(&desc);
 
 	sky = new Sky();
-	plane = new Plane();
+	terrain = new Terrain();
 }
 
 ExeModel::~ExeModel()
 {
-	SAFE_DELETE(plane);
+	SAFE_DELETE(terrain);
 	SAFE_DELETE(sky);
 }
 
 void ExeModel::Update()
 {
 	sky->Update(values->MainCamera);
-	plane->Update();
+	terrain->Update(values);
 }
 
 void ExeModel::PreRender()
@@ -33,13 +33,13 @@ void ExeModel::PreRender()
 void ExeModel::Render()
 {
 	sky->Render();
-	plane->Render();
+	terrain->Render();
 }
 
 void ExeModel::PostRender()
 {
 	sky->PostRender();
-	plane->PostRender();
+	terrain->PostRender();
 }
 
 void ExeModel::ResizeScreen()

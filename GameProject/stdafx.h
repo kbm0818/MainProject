@@ -44,6 +44,7 @@ using namespace fbxsdk;
 
 const wstring Contents = L"../_Contents/";
 const wstring Shaders = L"../_Shaders/";
+const wstring Textures = L"../_Contents/Textures/";
 
 #include "./Systems/D3D.h"
 #include "./Systems/Keyboard.h"
@@ -61,5 +62,6 @@ const wstring Shaders = L"../_Shaders/";
 
 #include "./Utilities/BinaryFile.h"
 #include "./Utilities/String.h"
+#include "./Utilities/Texture.h"
 
 //#include "./Model/Model.h"

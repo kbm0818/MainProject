@@ -28,7 +28,6 @@ Sky::Sky()
 	hr = D3D::GetDevice()->CreateBuffer(&desc, &data, &vertexBuffer);
 	assert(SUCCEEDED(hr));
 
-
 	desc = { 0 };
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.ByteWidth = sizeof(UINT) * indexCount;
@@ -49,8 +48,7 @@ Sky::Sky()
 	skyBuffer = new SkyBuffer();
 	worldBuffer = new WorldBuffer();
 
-	shader = new Shader(shaderFile);
-
+	shader = new Shader(shaderFile, ShaderType::VP);
 	
 	D3D11_RASTERIZER_DESC rasterizerDesc;
 	States::GetRasterizerDesc(&rasterizerDesc);
@@ -103,7 +101,7 @@ void Sky::Render()
 
 	worldBuffer->SetVSBuffer(1);
 	skyBuffer->SetPSBuffer(1);
-	shader->Render();
+	shader->Render(ShaderType::VP);
 
 
 	States::SetDepthStencil(depthOffState);
