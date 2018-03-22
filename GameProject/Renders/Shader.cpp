@@ -44,7 +44,7 @@ Shader::Shader(wstring shaderFile, ShaderType type)
 		break;
 	}
 
-	CreateInputLayout();
+
 }
 
 Shader::~Shader()

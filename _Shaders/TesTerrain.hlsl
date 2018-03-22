@@ -48,6 +48,21 @@ PatchTess ConstantHS(InputPatch<VertexOut, 4> patch, uint patchID : SV_Primitive
 	const float d0 = 50.0f;
 	const float d1 = 300.0f;
 
+	//float3 centerL = 0.25f*(patch[0].PosL + patch[1].PosL + patch[2].PosL + patch[3].PosL);
+	//float3 centerW = mul(float4(centerL, 1.0f), _worldHS).xyz;
+
+	//float d = distance(centerW, _cameraPositionHS);
+
+	//float tess = 64.0f*saturate((d1 - d) / (d1 - d0));
+
+	//pt.EdgeTess[0] = tess;
+	//pt.EdgeTess[1] = tess;
+	//pt.EdgeTess[2] = tess;
+	//pt.EdgeTess[3] = tess;
+
+	//pt.InsideTess[0] = tess;
+	//pt.InsideTess[1] = tess;
+
 	pt.EdgeTess[0] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[0].PosL + patch[2].PosL), 1.0f), _worldHS).xyz, _cameraPositionHS)) / (d1 - d0)), 5);
 	pt.EdgeTess[1] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[0].PosL + patch[1].PosL), 1.0f), _worldHS).xyz, _cameraPositionHS)) / (d1 - d0)), 5);
 	pt.EdgeTess[2] = 64.0f * pow(saturate((d1 - distance(mul(float4(0.5f * (patch[1].PosL + patch[3].PosL), 1.0f), _worldHS).xyz, _cameraPositionHS)) / (d1 - d0)), 5);
@@ -57,6 +72,8 @@ PatchTess ConstantHS(InputPatch<VertexOut, 4> patch, uint patchID : SV_Primitive
 
 	pt.InsideTess[0] = tess;
 	pt.InsideTess[1] = tess;
+
+	// 높이추가
 
 	return pt;
 }

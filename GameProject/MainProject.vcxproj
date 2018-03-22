@@ -26,6 +26,7 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="Renders\BackBuffer.cpp" />
+    <ClCompile Include="Renders\Frustum.cpp" />
     <ClCompile Include="Renders\RenderTarget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -58,6 +59,7 @@
     <ClInclude Include="Executes\ExeModel.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="Renders\BackBuffer.h" />
+    <ClInclude Include="Renders\Frustum.h" />
     <ClInclude Include="Renders\GlobalBuffers.h" />
     <ClInclude Include="Renders\RenderTarget.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
